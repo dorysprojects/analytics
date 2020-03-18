@@ -1,4 +1,6 @@
-const swup = new Swup();
+const swup = new Swup({
+    cache : false,
+});
 content = "";
 if (document.getElementById("file")) {
     var file = document.getElementById("file");
@@ -16,7 +18,7 @@ function getFile() {
 }
 
 async function samplefile() {
-    var text = await fetch('./sample.txt');
+    var text = await fetch('./sample.text');
     content = (await text.text());
     changePage();
 }
@@ -208,12 +210,12 @@ function monthDayDiff(startDate, endDate) {
     let year = end.getFullYear() - start.getFullYear();
     let month = end.getMonth() - start.getMonth();
     let day = end.getDate() - start.getDate();
-    if (month < 0) {
-        year--;
-        month = end.getMonth() + (12 - start.getMonth());
-    }
     if (day < 0) {
         month--;
+        if (month < 0) {
+            year--;
+            month = end.getMonth() + (12 - start.getMonth()) -1;
+        }
         let index = flag.findIndex((temp) => {
             return temp === start.getMonth() + 1
         });
@@ -226,6 +228,9 @@ function monthDayDiff(startDate, endDate) {
             monthLength = 28;
         }
         day = end.getDate() + (monthLength - start.getDate());
+    }else if (month < 0) {
+        year--;
+        month = end.getMonth() + (12 - start.getMonth());
     }
     
     return `${year}年${month}月${day}天`;
@@ -233,22 +238,6 @@ function monthDayDiff(startDate, endDate) {
 
 var Nowday = '';
 var Data = {};
-var user1 = '';
-var user2 = '';
-var user1textList = [];
-var user2textList = [];
-var user1phoneList = [];
-var user2phoneList = []; 
-var user1delgalleryList = [];
-var user2delgalleryList = [];
-var user1delphotoList = [];
-var user2delphotoList = [];
-var user1changegalleryList = [];
-var user2changegalleryList = [];
-var user1urlList = [];
-var user2urlList = [];
-var user1noteList = [];
-var user2noteList = [];
 var alltextList = {};
 var maxphonetime = '';
 var maxphonetimedate = '';
@@ -259,13 +248,18 @@ var NowType = '';
 var NowUser = '';
 var NowUserTextCtn = 0;
 var NowUserNoteCtn = 0;
+var NowUserPollCtn = 0;
+var NowUserPollendCtn = 0;
 var FirstDay = '';
 var LastDay = '';
-var dayList = {};
-dayList['text'] = {};
-dayList['phone'] = {};
-dayList['phonelong'] = {};
-dayList['eachword'] = {};
+var dayList = {
+    'msg' : {},
+    'text' : {},
+    'phone' : {},
+    'phonelong' : {},
+    'eachword' : {},
+};
+var MaxMsgDay = '';
 var MaxCtnText = '';
 var MaxTextDay = '';
 var MaxPhoneDay = '';
@@ -274,21 +268,11 @@ function analyse() {
     lines = content.split("\n");
     length = lines.length;
     chatname = lines[0];
-    user1 = chatname.replace('[LINE] 與', '').replace('的聊天記錄', '');
-    user1 = user1.substr(0, user1.length-1);
-    Data[user1] = {
-        '文字' : 0, '貼圖' : 0, '照片' : 0, '連結' : 0, 'dayList' : {},
-        '記事本' : 0, '相簿' : 0, '電話' : 0, '刪除相簿照片' : 0,
-        '更改相簿名稱' : 0, '刪除相簿' : 0, '收回訊息' : 0,
-        '影片' : 0, '語音訊息' : 0, '未接來電' : 0
-    };
-    
-    
-    document.getElementById('LoadingProgressBar').style.width = '0%';
-    document.getElementById('LoadingProgressBar').innerHTML = '0%';
+//    document.getElementById('LoadingProgressBar').style.width = '0%';
+//    document.getElementById('LoadingProgressBar').innerHTML = '0%';
     for (i = 3; i <= length; i++) {
-        document.getElementById('LoadingProgressBar').style.width = (i/length*100) + '%';
-        document.getElementById('LoadingProgressBar').innerHTML = (i/length*100) + '%';
+//        document.getElementById('LoadingProgressBar').style.width = (i/length*100) + '%';
+//        document.getElementById('LoadingProgressBar').innerHTML = (i/length*100) + '%';
         if(lines[i]){
             var Column = lines[i].split("\t");
             var datetime = Column[0];
@@ -316,25 +300,29 @@ function analyse() {
                 var text = '';
                 var url = '';
                 
-                if(msg){
-                    if(!user2 && user!==user1){
-                        user2 = user;
-                        Data[user2] = {
-                            '文字' : 0, '貼圖' : 0, '照片' : 0, '連結' : 0, 'dayList' : {},
-                            '記事本' : 0, '相簿' : 0, '電話' : 0, '刪除相簿照片' : 0,
-                            '更改相簿名稱' : 0, '刪除相簿' : 0, '收回訊息' : 0,
-                            '影片' : 0, '語音訊息' : 0, '未接來電' : 0
-                        };
-                    }
+                if(msg && (datetime.includes('上午')||datetime.includes('下午')) && datetime.includes(':')){
+                    CreateUser();
                 }
                 
                 if(!msg){
-                    if(user.substr(-6, 5) === '已收回訊息'){
+                    if(user.substr(-5, 4) === '加入群組'){
+                        user = user.substr(0, user.length-5);
+                        type = '加入群組';
+                    }else if(user.substr(-6, 5) === '已退出群組'){
+                        user = user.substr(0, user.length-6);
+                        type = '退出群組';
+                    }else if(user.substr(-6, 5) === '已收回訊息'){
                         user = user.substr(0, user.length-6);
                         if(user === '您'){
-                            user = (user2) ? user2 : user;
+                            user = (Object.keys(Data)[1]) ? Object.keys(Data)[1] : user;
                         }
                         type = '收回訊息';
+                    }else if(user.includes('邀請') && user.includes('加入')){
+                        var tmp = user.split('邀請');
+                        var tmp2 = tmp[1].split('加入');
+                        type = '邀請加入';
+                        user = tmp[0];
+                        data = tmp2[0];
                     }else if(user.includes('刪除了「') && user.includes('」相簿內的照片')){
                         var tmp = user.split('刪除了「');
                         var tmp2 = tmp[1].split('」相簿內的照片');
@@ -356,23 +344,35 @@ function analyse() {
                         data = tmp2[0];
                         data2 = tmp3[0];
                     }else{
-                        if(datetime && user){
-                            type = "文字";
-                            text = msg = lines[i].split(user)[1];
-                        }else if(datetime && !user){
-//                            console.log(lines[i]);
-                        }else if(!datetime && user){
-                            UndoMsg(user);
-                            continue;
-                        }else if(!datetime && !user){
-//                            console.log(lines[i]);
+                        switch(user){
+                            case '群組通話已結束。':
+                                continue;
+                                break;
+                            default:
+                                if(datetime && user){
+                                    type = "文字";
+                                    text = msg = lines[i].split(user)[1];
+                                }else if(datetime && !user){
+//                                    console.log(lines[i]);
+                                }else if(!datetime && user){
+                                    UndoMsg(user);
+                                    continue;
+                                }else if(!datetime && !user){
+//                                    console.log(lines[i]);
+                                }
+                                break;
                         }
                     }
-                    if(user!== user1 && user!== user2){
-                        if(user.charCodeAt(0).toString(16)===user1.charCodeAt(1).toString(16) || user.charCodeAt(1).toString(16)===user1.charCodeAt(0).toString(16)){
-                            user = user1;
-                        }else if(user.charCodeAt(0).toString(16)===user2.charCodeAt(1).toString(16) || user.charCodeAt(1).toString(16)===user2.charCodeAt(0).toString(16)){
-                            user = user2;
+                    if(user){
+                        if(!Data[user]){
+                            for(var userKey in Data){
+                                if(user.charCodeAt(0).toString(16)===userKey.charCodeAt(1).toString(16) || user.charCodeAt(1).toString(16)===userKey.charCodeAt(0).toString(16)){
+                                    user = userKey;
+                                }
+                            }
+                            if(!Data[user]){
+                                CreateUser();
+                            }
                         }
                     }
                 }else if(msg.includes("☎ 通話時間")){
@@ -419,34 +419,84 @@ function analyse() {
                 }else if(msg.substr(0, 5) === '[記事本]'){
                     type = '記事本';
                     note = msg.replace('[記事本]', '');
+                }else if(msg.substr(0, 8) === '"[Poll] '){
+                    type = '發起投票';
+                    data = msg.replace('"[Poll] ', '');
+                }else if(msg.substr(0, 15) === '"[Poll closed] '){
+                    type = '投票截止';
+                    data = msg.replace('"[Poll closed] ', '');
                 }else{
-                    msg = msg.substr(0, msg.length-1);
+                    var TMPmsg = msg.substr(0, msg.length-1);
                     switch(msg){
+                        case '☎ chat.message.groupcall.started.long':
+                            type = '開始群組通話';
+                            break;
                         case '[相簿] (null)':
                             type = '相簿';
                             break;
+                        case '貼圖':
                         case '[貼圖]':
                             type = '貼圖';
                             break;
+                        case '照片':
                         case '[照片]':
                             type = '照片';
                             break;
+                        case '影片':
                         case '[影片]':
                             type = '影片';
-                            break; 
+                            break;
+                        case '語音訊息':
                         case '[語音訊息]':
                             type = '語音訊息';
-                            break; 
+                            break;
+                        case '聯絡資訊':
+                        case '[聯絡資訊]':
+                            type = '傳送聯絡資訊';
+                            break;
                         case '☎ 未接來電':
                             type = '未接來電';
-                            break; 
+                            break;
                         default :
-                            if(new RegExp(/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/).test(msg)){
-                                type = '連結';
-                                url = msg;
-                            }else{
-                                type = '文字';
-                                text = msg;
+                            switch(TMPmsg){
+                                case '☎ chat.message.groupcall.started.long':
+                                    type = '開始群組通話';
+                                    break;
+                                case '[相簿] (null)':
+                                    type = '相簿';
+                                    break;
+                                case '貼圖':
+                                case '[貼圖]':
+                                    type = '貼圖';
+                                    break;
+                                case '照片':
+                                case '[照片]':
+                                    type = '照片';
+                                    break;
+                                case '影片':
+                                case '[影片]':
+                                    type = '影片';
+                                    break;
+                                case '語音訊息':
+                                case '[語音訊息]':
+                                    type = '語音訊息';
+                                    break;
+                                case '聯絡資訊':
+                                case '[聯絡資訊]':
+                                    type = '傳送聯絡資訊';
+                                    break;
+                                case '☎ 未接來電':
+                                    type = '未接來電';
+                                    break;
+                                default :
+                                    if(new RegExp(/http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/).test(msg)){
+                                        type = '連結';
+                                        url = msg;
+                                    }else{
+                                        type = '文字';
+                                        text = msg;
+                                    }
+                                    break;
                             }
                             break;
                     }
@@ -466,46 +516,37 @@ function analyse() {
                             Data[user][type] = 1;
                         }
                         switch(type){
-                            case '記事本':
-                                note = note.substr(0);
+                            case '發起投票':
                                 NowType = type;
                                 NowUser = user;
-                                if(user === user1){
-                                    NowUserNoteCtn = user1noteList.length; 
-                                }else{
-                                    NowUserNoteCtn = user2noteList.length; 
-                                }
                                 
-                                if(user === user1){
-                                    user1noteList.push(note);
-                                }else{
-                                    user2noteList.push(note);
-                                }
+                                NowUserPollCtn = Data[user]['poll'].length;
+                                Data[user]['poll'].push(data);
+                                break;
+                            case '投票截止':
+                                NowType = type;
+                                NowUser = user;
+                                
+                                NowUserPollendCtn = Data[user]['pollend'].length;
+                                Data[user]['pollend'].push(data);
+                                break;
+                            case '記事本':
+                                NowType = type;
+                                NowUser = user;
+                                
+                                NowUserNoteCtn = Data[user]['note'].length;
+                                Data[user]['note'].push(note);
                                 break;
                             case '連結':
-                                if(user === user1){
-                                    user1urlList.push(url);
-                                }else{
-                                    user2urlList.push(url);
-                                }
+                                Data[user]['url'].push(url);
                                 break;
                             case '文字':
-                                text = text.substr(0);
                                 if(text.substr(0,1)==='"'){
                                     NowType = type;
                                     NowUser = user;
-                                    if(user === user1){
-                                        NowUserTextCtn = user1textList.length; 
-                                    }else{
-                                        NowUserTextCtn = user2textList.length; 
-                                    }
+                                    NowUserTextCtn = Data[user]['note'].length;
                                 }
-                                
-                                if(user === user1){
-                                    user1textList.push(text);
-                                }else{
-                                    user2textList.push(text);
-                                }
+                                Data[user]['text'].push(text);
                                 
                                 if(alltextList[text]){
                                     alltextList[text] += 1;
@@ -518,11 +559,6 @@ function analyse() {
                                     }
                                 }else{
                                     MaxCtnText = text;
-                                }
-                                if(Data[user]['dayList'][Nowday]){
-                                    Data[user]['dayList'][Nowday] += 1;
-                                }else{
-                                    Data[user]['dayList'][Nowday] = 1;
                                 }
                                 if(dayList['text'][Nowday]){
                                     dayList['text'][Nowday] += 1;
@@ -550,11 +586,7 @@ function analyse() {
                                 }
                                 break;
                             case '電話':
-                                if(user === user1){
-                                    user1phoneList.push(phonetime);
-                                }else{
-                                    user2phoneList.push(phonetime);
-                                }
+                                Data[user]['phone'].push(phonetime);
                                 if(dayList['phone'][Nowday]){
                                     dayList['phone'][Nowday] += 1;
                                 }else{
@@ -605,36 +637,58 @@ function analyse() {
                                 }
                                 break;
                             case '刪除相簿':
-                                if(user === user1){
-                                    user1delgalleryList.push(data);
-                                }else{
-                                    user2delgalleryList.push(data);
-                                }
+                                Data[user]['delgallery'].push(data);
                                 break;
                             case '刪除相簿照片':
-                                if(user === user1){
-                                    user1delphotoList.push(data);
-                                }else{
-                                    user2delphotoList.push(data);
-                                }
+                                Data[user]['delphoto'].push(data);
                                 break;
                             case '更改相簿名稱':
-                                if(user === user1){
-                                    user1changegalleryList.push(data + '->' + data2);
-                                }else{
-                                    user2changegalleryList.push(data + '->' + data2);
-                                }
+                                Data[user]['changegallery'].push(data + '->' + data2);
                                 break;
-                            case '相簿':
                             case '貼圖':
                             case '照片':
-                            case '收回訊息':
                             case '影片':
                             case '語音訊息':
+                                break;
+                            case '相簿':
+                            case '收回訊息':
                             case '未接來電':
+                            case '加入群組':
+                            case '退出群組':
+                            case '開始群組通話':
+                            case '傳送聯絡資訊':
+                            case '邀請加入':
                                 break;
                             default :
                                 console.log(lines[i]);
+                                break;
+                        }
+                        switch(type){
+                            case '貼圖':
+                            case '照片':
+                            case '影片':
+                            case '語音訊息':
+                            case '連結':
+                            case '文字':
+                                if(Data[user]['dayList'][Nowday]){
+                                    Data[user]['dayList'][Nowday] += 1;
+                                }else{
+                                    Data[user]['dayList'][Nowday] = 1;
+                                }
+                                if(dayList['msg'][Nowday]){
+                                    dayList['msg'][Nowday] += 1;
+                                }else{
+                                    dayList['msg'][Nowday] = 1;
+                                }
+                                if(MaxMsgDay){
+                                    var MaxTextDayTmp = new Date(MaxMsgDay.split("（")[0]);
+                                    var NowdayTmp = new Date(Nowday.split("（")[0]);
+                                    if(dayList['msg'][Nowday] > dayList['msg'][MaxMsgDay]){
+                                        MaxMsgDay = Nowday;
+                                    }
+                                }else{
+                                    MaxMsgDay = Nowday;
+                                }
                                 break;
                         }
                     }
@@ -642,120 +696,46 @@ function analyse() {
             }
         }
     }
-    Data[user1]['note'] = user1noteList;
-    Data[user2]['note'] = user2noteList;
-    Data[user1]['url'] = user1urlList;
-    Data[user2]['url'] = user2urlList;
-    Data[user1]['text'] = user1textList;
-    Data[user2]['text'] = user2textList;
-    Data[user1]['phone'] = user1phoneList;
-    Data[user2]['phone'] = user2phoneList;
-    Data[user1]['delgallery'] = user1delgalleryList;
-    Data[user2]['delgallery'] = user2delgalleryList;
-    Data[user1]['delphoto'] = user1delphotoList;
-    Data[user2]['delphoto'] = user2delphotoList;
-    Data[user1]['changegallery'] = user1changegalleryList;
-    Data[user2]['changegallery'] = user2changegalleryList;
     
     var totalTimeTmp = totalTime.split(":");
     var Hour = totalTimeTmp[0];
     var Min = totalTimeTmp[1];
     var Sec = totalTimeTmp[2];
     Min = Min*1 + parseInt(totalTimeTmp[2]*1/60);
-    Sec = Sec*1%60;
+    Sec = (Sec) ? Sec*1%60 : 0;
     Hour = Hour*1 + parseInt(Min*1/60);
-    Min = Min*1%60;
-    var Day = parseInt(Hour*1/24);
-    Hour = Hour*1%60;
+    Min = (Min) ? Min*1%60 : 0;
+    var Day = (Hour) ? parseInt(Hour*1/24) : 0;
+    Hour = (Hour) ? Hour*1%60 : 0;
     var Datetime = Day+'天' + Hour+'時' +  Min+'分' + Sec+'秒';//通話時間
     var FirstDayTmp = new Date(FirstDay.split("（")[0]);
     var LastDayTmp = new Date(LastDay.split("（")[0]);
 //    var TineGap = (LastDayTmp - FirstDayTmp) / (1000 * 60 * 60 * 24);//聊天 天數
     var TineGap = monthDayDiff(FirstDayTmp, LastDayTmp);//聊天 幾年幾月幾日
-    var MsgTotal = ((Data[user1]['文字']+Data[user1]['貼圖']+Data[user1]['照片']+Data[user1]['連結']+Data[user1]['影片']+Data[user1]['語音訊息'])+(Data[user2]['文字']+Data[user2]['貼圖']+Data[user2]['照片']+Data[user2]['連結']+Data[user2]['影片']+Data[user2]['語音訊息']));//總訊息數
-    var TextTotal = Data[user1]['文字']*1+Data[user2]['文字']*1;//文字總數
-    var PhoneTotal = Data[user1]['電話']*1+Data[user2]['電話']*1;//總通話數
-//    console.log(MaxTextDay, MaxPhoneDay, MaxLongPhoneDay);//單日訊息最多(日期)、單日最多通話(日期)、最多單日通話時間(日期)
-//    console.log(dayList['text'][MaxTextDay], dayList['phone'][MaxPhoneDay], dayList['phonelong'][MaxLongPhoneDay]);//單日訊息最多(數量)、單日最多通話(數量)、最多單日通話時間(數量)
+    var MsgTotal = 0;
+    var TextTotal = 0;
+    var PhoneTotal = 0;
+    for(var UserName in Data){
+        TextTotal += Data[UserName]['文字']*1;
+        PhoneTotal += Data[UserName]['電話']*1;
+        MsgTotal += Data[UserName]['文字']*1 + Data[UserName]['貼圖']*1 + Data[UserName]['照片']*1 + Data[UserName]['連結']*1 + Data[UserName]['影片']*1 + Data[UserName]['語音訊息']*1;
+    }
+    
+//    console.log(MsgTotal, TextTotal, PhoneTotal);//總訊息數、文字總數、總通話數
+//    console.log(MaxMsgDay, MaxTextDay, MaxPhoneDay, MaxLongPhoneDay);//單日訊息最多(日期)、單日文字最多(日期)、單日最多通話(日期)、最多單日通話時間(日期)
+//    console.log(dayList['msg'][MaxMsgDay], dayList['text'][MaxTextDay], dayList['phone'][MaxPhoneDay], dayList['phonelong'][MaxLongPhoneDay]);//單日訊息最多(數量)、單日文字最多(數量)、單日最多通話(數量)、最多單日通話時間(數量)
 //    console.log(maxphonetimedate, maxphonetime);//單次最久通話時間(日期)、單次最久通話時間(數量)
 //    console.log(dayList);//每日 訊息數量；電話數量、電話通話時間、各訊息數量
 //    console.log(alltextList, MaxCtnText);//各訊息 重複出現次數(文字雲用)，最常用訊息
 //    console.log(Data);//使用者1、使用者2 各類型次數
+    
     displayResult();
-    
-    function UndoMsg(addMsg){
-        var OldMsg = '';
-        var NewMsg = '';
-        switch(NowType){
-            case '記事本':
-                if(NowUser == user1){
-                    OldMsg = user1noteList[NowUserNoteCtn];
-                    NewMsg = OldMsg + '\n' + addMsg;
-                    user1noteList.splice(NowUserNoteCtn, 1, NewMsg);
-                }else{
-                    OldMsg = user2noteList[NowUserNoteCtn];
-                    NewMsg = OldMsg + '\n' + addMsg;
-                    user2noteList.splice(NowUserNoteCtn, 1, NewMsg);
-                }
-                break;
-            case '文字':
-                if(NowUser == user1){
-                    OldMsg = user1textList[NowUserTextCtn];
-                    NewMsg = OldMsg + '\n' + addMsg;
-                    user1textList.splice(NowUserTextCtn, 1, NewMsg);
-                }else{
-                    OldMsg = user2textList[NowUserTextCtn];
-                    NewMsg = OldMsg + '\n' + addMsg;
-                    user2textList.splice(NowUserTextCtn, 1, NewMsg);
-                }
-                alltextList[NewMsg] = alltextList[OldMsg];
-                delete alltextList[OldMsg];
-                break;
-        }
-    }
-    
     function displayResult() {
         const chatTitle = document.querySelector('[chat-title]');
-        const member1Name = document.querySelector('[member1-name]');
-        const member2Name = document.querySelector('[member2-name]');
-        const member1Message = document.querySelector('[member1-message]');
-        const member2Message = document.querySelector('[member2-message]');
         const statDay = document.querySelector('[stat-day]');
         const statMessage = document.querySelector('[stat-message]');
         const statCall = document.querySelector('[stat-call]');
         const statCalltime = document.querySelector('[stat-calltime]');
-        
-        const member1Chart = document.querySelector('[member1-chart]');
-        const member1Texts = document.querySelector('[member1-texts]');
-        const member1Stickers = document.querySelector('[member1-stickers]');
-        const member1Photos = document.querySelector('[member1-photos]');
-        const member1Urls = document.querySelector('[member1-urls]');
-        const member1Notes = document.querySelector('[member1-notes]');
-        const member1Gallerys = document.querySelector('[member1-gallerys]');
-        const member1Phones = document.querySelector('[member1-phones]');
-        const member1Delphotos = document.querySelector('[member1-delphotos]');
-        const member1Changegallerys = document.querySelector('[member1-changegallerys]');
-        const member1Delgallerys = document.querySelector('[member1-delgallerys]');
-        const member1Revokemsgs = document.querySelector('[member1-revokemsgs]');
-        const member1Missedcalls = document.querySelector('[member1-missedcalls]');
-        const member1Videos = document.querySelector('[member1-videos]');
-        const member1Audios = document.querySelector('[member1-audios]');
-        
-        const member2Chart = document.querySelector('[member2-chart]');
-        const member2Texts = document.querySelector('[member2-texts]');
-        const member2Stickers = document.querySelector('[member2-stickers]');
-        const member2Photos = document.querySelector('[member2-photos]');
-        const member2Urls = document.querySelector('[member2-urls]');
-        const member2Notes = document.querySelector('[member2-notes]');
-        const member2Gallerys = document.querySelector('[member2-gallerys]');
-        const member2Phones = document.querySelector('[member2-phones]');
-        const member2Delphotos = document.querySelector('[member2-delphotos]');
-        const member2Changegallerys = document.querySelector('[member2-changegallerys]');
-        const member2Delgallerys = document.querySelector('[member2-delgallerys]');
-        const member2Revokemsgs = document.querySelector('[member2-revokemsgs]');
-        const member2Missedcalls = document.querySelector('[member2-missedcalls]');
-        const member2Videos = document.querySelector('[member2-videos]');
-        const member2Audios = document.querySelector('[member2-audios]');
         
         const maxMessageResult = document.querySelectorAll('[max-message]');
         const maxYear = document.querySelectorAll('[max-year]');
@@ -776,24 +756,130 @@ function analyse() {
         const maxCalllongmonth = document.querySelectorAll('[max-calllong-month]');
         const maxCalllongday = document.querySelectorAll('[max-calllong-day]');
 
-        var maxIdx = (window.innerWidth) > 768 ? 0 : 1;
-
+        var maxIdx = (window.screen.width) > 768 ? 0 : 1;
+        
         chatTitle.textContent = chatname + ':';
-        member1Name.textContent = user1;
-        member2Name.textContent = user2;
-        member1Message.textContent = (Data[user1]['文字']+Data[user1]['貼圖']+Data[user1]['照片']+Data[user1]['連結']+Data[user1]['影片']+Data[user1]['語音訊息']) + ' 則';
-        member2Message.textContent = (Data[user2]['文字']+Data[user2]['貼圖']+Data[user2]['照片']+Data[user2]['連結']+Data[user2]['影片']+Data[user2]['語音訊息'])  + ' 則';
+        var U_Ctn = 0;
+        var colorClassList = ['black', 'white', 'red'];
+        var colorList = ['#EB9F9F', '#F0E5DE', '#7C7877'];
+        var myCanvasDataList = [];
+        var myCanvasColorList = [];
+        for(var UserName in Data){ U_Ctn++;
+            if($('.firstrow').find('.lg-container').length !== U_Ctn){
+                var TMP = $('.firstrow').find('.lg-container').eq(0).clone();
+                $('.firstrow').find('.legend').append(TMP);
+            }
+            $('.firstrow').find('.lg-container').eq(U_Ctn-1).find('.icon').attr('class', 'icon ' + colorClassList[(U_Ctn-1) % colorClassList.length]);
+            $('.firstrow').find('.lg-container').eq(U_Ctn-1).find('.legendtext')[0].textContent = UserName;
+            $('.firstrow').find('.lg-container').eq(U_Ctn-1).find('.legendtext')[1].textContent = (Data[UserName]['文字']+Data[UserName]['貼圖']+Data[UserName]['照片']+Data[UserName]['連結']+Data[UserName]['影片']+Data[UserName]['語音訊息']) + ' 則';
+            
+            if($('.secondrow').find('.member').length !== U_Ctn){
+                var TMP = $('.secondrow').find('.member').eq(0).clone();
+                $('.secondrow').append(TMP);
+                $('.secondrow').append($('.secondrow').find('.freqandsearch'));
+            }
+            $('.secondrow').find('.member').eq(U_Ctn-1).find('canvas').attr('id', 'memberCanvas' + U_Ctn);
+            generateDonut('memberCanvas' + U_Ctn, [Data[UserName]['文字'], Data[UserName]['貼圖'], Data[UserName]['照片'], Data[UserName]['連結']
+                                                , Data[UserName]['記事本'], Data[UserName]['相簿'], Data[UserName]['電話'], Data[UserName]['刪除相簿照片']
+                                                , Data[UserName]['更改相簿名稱'], Data[UserName]['刪除相簿'], Data[UserName]['收回訊息'], Data[UserName]['未接來電']
+                                                , Data[UserName]['影片'], Data[UserName]['語音訊息'], Data[UserName]['加入群組'], Data[UserName]['退出群組']
+                                                , Data[UserName]['開始群組通話'], Data[UserName]['發起投票'], Data[UserName]['投票截止'], Data[UserName]['傳送聯絡資訊']
+                                                , Data[UserName]['邀請加入']]
+                                                , ['#EB9F9F', '#F0E5DE', '#7C7877', '#FFFF77', '#FF8888'
+                                                , '#EB9F9F', '#F0E5DE', '#7C7877', '#FFFF77', '#FF8888'
+                                                , '#EB9F9F', '#F0E5DE', '#7C7877', '#FFFF77', '#FF8888'
+                                                , '#EB9F9F', '#F0E5DE', '#7C7877', '#FFFF77', '#FF8888'
+                                                , '#EB9F9F']);
+            $('.secondrow').find('.member').eq(U_Ctn-1).find('.member-name')[0].textContent = UserName;
+            var TMPCtn = -1;
+            $('.secondrow').find('.member').eq(U_Ctn-1).find('.membericon').each(function(e) { TMPCtn++;
+                $(this).attr('class', 'icon ' + colorClassList[TMPCtn % colorClassList.length] + ' membericon');
+            });
+            $('.secondrow').find('.member').eq(U_Ctn-1).find('.legendtext').each(function(e) {
+                var type = '';
+                switch($(this).attr('data-type')){
+                    case 'texts':
+                        type = '文字';
+                        break;
+                    case 'stickers':
+                        type = '貼圖';
+                        break;
+                    case 'photos':
+                        type = '照片';
+                        break;
+                    case 'urls':
+                        type = '連結';
+                        break;
+                    case 'notes':
+                        type = '記事本';
+                        break;
+                    case 'gallerys':
+                        type = '相簿';
+                        break;
+                    case 'phones':
+                        type = '電話';
+                        break;
+                    case 'delphotos':
+                        type = '刪除相簿照片';
+                        break;
+                    case 'changegallerys':
+                        type = '更改相簿名稱';
+                        break;
+                    case 'delgallerys':
+                        type = '刪除相簿';
+                        break;
+                    case 'revokemsgs':
+                        type = '收回訊息';
+                        break;
+                    case 'missedcalls':
+                        type = '未接來電';
+                        break;
+                    case 'videos':
+                        type = '影片';
+                        break;
+                    case 'audios':
+                        type = '語音訊息';
+                        break;
+                    case 'joingroups':
+                        type = '加入群組';
+                        break;
+                    case 'leavegroups':
+                        type = '退出群組';
+                        break;
+                    case 'startgroupcalls':
+                        type = '開始群組通話';
+                        break;
+                    case 'polls':
+                        type = '發起投票';
+                        break;
+                    case 'pollends':
+                        type = '投票截止';
+                        break;
+                    case 'sendcontactinfos':
+                        type = '傳送聯絡資訊';
+                        break;
+                    case 'invites':
+                        type = '邀請加入';
+                        break;
+                }
+                $(this)[0].textContent = Data[UserName][type] + ' ' + type;
+            });
+            
+            myCanvasDataList.push(Data[UserName]['文字']+Data[UserName]['貼圖']+Data[UserName]['照片']+Data[UserName]['連結']+Data[UserName]['影片']+Data[UserName]['語音訊息']);
+            myCanvasColorList.push(colorList[U_Ctn % colorList.length]);
+        }
+        
         statDay.textContent = TineGap;
         statMessage.textContent = MsgTotal;
         statCall.textContent = PhoneTotal;
         statCalltime.textContent = Datetime;
-
-        maxlist = MaxTextDay.split(/[/（ ()]+/);//.split('/')
-        maxMessageResult[maxIdx].textContent = dayList['text'][MaxTextDay] + ' 則';
+        
+        maxlist = MaxMsgDay.split(/[/（ ()]+/);//.split('/')
+        maxMessageResult[maxIdx].textContent = dayList['msg'][MaxMsgDay] + ' 則';
         maxYear[maxIdx].textContent = maxlist[0];
         maxMonth[maxIdx].textContent = maxlist[1];
         maxDay[maxIdx].textContent = maxlist[2];
-
+        
         if (PhoneTotal) {
             maxCalltimeList = MaxLongPhoneDay.split(/[/（ ()]+/);//.split('/')
             var Tmp = dayList['phonelong'][MaxLongPhoneDay].split(':');
@@ -819,92 +905,35 @@ function analyse() {
             maxCalllongmonth[maxIdx].textContent = maxCalllongList[1];
             maxCalllongday[maxIdx].textContent = maxCalllongList[2];
         }
-
-        member1Chart.textContent = user1;
-        member1Texts.textContent = Data[user1]['文字'] + ' 文字';
-        member1Stickers.textContent = Data[user1]['貼圖'] + ' 貼圖';
-        member1Photos.textContent = Data[user1]['照片'] + ' 照片';
-        member1Urls.textContent = Data[user1]['連結'] + ' 連結';
-        member1Notes.textContent = Data[user1]['記事本'] + ' 記事本';
-        member1Gallerys.textContent = Data[user1]['相簿'] + ' 相簿';
-        member1Phones.textContent = Data[user1]['電話'] + ' 電話';
-        member1Delphotos.textContent = Data[user1]['刪除相簿照片'] + ' 刪除相簿照片';
-        member1Changegallerys.textContent = Data[user1]['更改相簿名稱'] + ' 更改相簿名稱';
-        member1Delgallerys.textContent = Data[user1]['刪除相簿'] + ' 刪除相簿';
-        member1Revokemsgs.textContent = Data[user1]['收回訊息'] + ' 收回訊息';
-        member1Missedcalls.textContent = Data[user1]['未接來電'] + ' 未接來電';
-        member1Videos.textContent = Data[user1]['影片'] + ' 影片';
-        member1Audios.textContent = Data[user1]['語音訊息'] + ' 語音訊息';
         
-        member2Chart.textContent = user2;
-        member2Texts.textContent = Data[user2]['文字'] + ' 文字';
-        member2Stickers.textContent = Data[user2]['貼圖']+ ' 貼圖';
-        member2Photos.textContent = Data[user2]['照片'] + ' 照片';
-        member2Urls.textContent = Data[user2]['連結'] + ' 連結';
-        member2Notes.textContent = Data[user2]['記事本'] + ' 記事本';
-        member2Gallerys.textContent = Data[user2]['相簿'] + ' 相簿';
-        member2Phones.textContent = Data[user2]['電話'] + ' 電話';
-        member2Delphotos.textContent = Data[user2]['刪除相簿照片'] + ' 刪除相簿照片';
-        member2Changegallerys.textContent = Data[user2]['更改相簿名稱'] + ' 更改相簿名稱';
-        member2Delgallerys.textContent = Data[user2]['刪除相簿'] + ' 刪除相簿';
-        member2Revokemsgs.textContent = Data[user2]['收回訊息'] + ' 收回訊息';
-        member2Missedcalls.textContent = Data[user2]['未接來電'] + ' 未接來電';
-        member2Videos.textContent = Data[user2]['影片'] + ' 影片';
-        member2Audios.textContent = Data[user2]['語音訊息'] + ' 語音訊息';
-        
-        generateDonut('myCanvas', [Data[user2]['文字'], Data[user1]['文字']], ['#7C7877', '#F0E5DE']);
-        generateDonut('memberCanvas1', [Data[user1]['文字'], Data[user1]['貼圖'], Data[user1]['照片']
-                                     , Data[user1]['連結'], Data[user1]['記事本'], Data[user1]['相簿']
-                                     , Data[user1]['電話'], Data[user1]['刪除相簿照片'], Data[user1]['更改相簿名稱']
-                                     , Data[user1]['刪除相簿'], Data[user1]['收回訊息'], Data[user1]['未接來電']
-                                     , Data[user1]['影片'], Data[user1]['語音訊息']]
-                                     , ['#EB9F9F', '#F0E5DE', '#7C7877', '#FFFF77', '#FF8888', '#FF77FF', '#E91E63'
-                                     , '#C2D56A', '#8ABC4B', '#E5EAF1', '#4C709D', '#FFC107', '#4CAF50', '#DD0000']);
-        generateDonut('memberCanvas2', [Data[user2]['文字'], Data[user2]['貼圖'], Data[user2]['照片']
-                                     , Data[user2]['連結'], Data[user2]['記事本'], Data[user2]['相簿']
-                                     , Data[user2]['電話'], Data[user2]['刪除相簿照片'], Data[user2]['更改相簿名稱']
-                                     , Data[user2]['刪除相簿'], Data[user2]['收回訊息'], Data[user2]['未接來電']
-                                     , Data[user2]['影片'], Data[user2]['語音訊息']]
-                                     , ['#EB9F9F', '#F0E5DE', '#7C7877', '#FFFF77', '#FF8888', '#FF77FF', '#E91E63'
-                                     , '#C2D56A', '#8ABC4B', '#E5EAF1', '#4C709D', '#FFC107', '#4CAF50', '#DD0000']);
+        generateDonut('myCanvas', myCanvasDataList, myCanvasColorList);
         
         generatePlots();
         function generatePlots() {
-            var fontsize = (window.innerWidth > 768) ? 18 : 12;
-            var margin = (window.innerWidth > 768) ? 50 : 45;
+            var fontsize = (window.screen.width > 768) ? 18 : 12;
+            var margin = (window.screen.width > 768) ? 50 : 45;
+            
             var memberMessage = [];
-            var TmpText_user1dayList = [];
-            for(var key in Data[user1]['dayList']){
-                TmpText_user1dayList[TmpText_user1dayList.length] = Data[user1]['dayList'][key];
-            }
-            memberMessage.push({
-                y: TmpText_user1dayList,
-                line: { shape: 'spline', width: 3 },
-                type: 'scatter',
-                name: user1,
-                opacity: 0.5,
-                font: {
-                    size: 30
+            for(var UserName in Data){
+                var TmpText_UserNamedayList = [];
+                for(var key in Data[UserName]['dayList']){
+                    TmpText_UserNamedayList[TmpText_UserNamedayList.length] = Data[UserName]['dayList'][key];
                 }
-            });
-            var TmpText_user2dayList = [];
-            for(var key in Data[user2]['dayList']){
-                TmpText_user2dayList[TmpText_user2dayList.length] = Data[user2]['dayList'][key];
-            }
-            memberMessage.push({
-                y: TmpText_user2dayList,
-                line: { shape: 'spline', width: 3 },
-                type: 'scatter',
-                name: user2,
-                opacity: 0.5,
-                font: {
-                    size: 30
-                }
-            });
+                memberMessage.push({
+                    y: TmpText_UserNamedayList,
+                    line: { shape: 'spline', width: 3 },
+                    type: 'scatter',
+                    name: UserName,
+                    opacity: 0.5,
+                    font: {
+                        size: 30
+                    }
+                });
+            };
             
             var TmpText_dayList = [];
-            for(var key in dayList['text']){
-                TmpText_dayList[TmpText_dayList.length] = dayList['text'][key];
+            for(var key in dayList['msg']){
+                TmpText_dayList[TmpText_dayList.length] = dayList['msg'][key];
             }
             var allMessage = {
                 y: TmpText_dayList,
@@ -1007,27 +1036,78 @@ function analyse() {
                     (Math.random() * (max - min) + min).toFixed() + '%)';
             }
             var maxCtn = cloudlist[maxTxt];
-            var html = '';
-            var obj = (window.innerWidth > 768) ? document.getElementById('wordcloud') : document.getElementById('wordcloud-mobile');
-            var obj_oL = obj.offsetLeft;
-            var obj_oT = obj.offsetTop;
+            var obj = (window.screen.width > 768) ? document.getElementById('wordcloud') : document.getElementById('wordcloud-mobile');
+            obj.innerHTML = '';
             var obj_W = obj.parentNode.offsetWidth;
             var obj_H = obj.parentNode.offsetHeight;
             for(var key in cloudlist){
                 var item = cloudlist[key];
                 var color = random_hsl_color(10, 50);
-                var left = Math.floor(Math.random()*obj_W) + obj_oL;
-                var top = Math.floor(Math.random()*obj_H) + obj_oT - 10;
-                var MaxSize = (window.innerWidth > 768) ? 80 : 40;
+                var MaxSize = (window.screen.width > 768) ? 80 : 40;
                 var size = Math.floor(item/maxCtn*MaxSize);
-                var transform = Math.floor(Math.random()*90);
-                if(size>=1){
-                    var style = 'position: absolute;font-weight: bold;color: ' + color + ';left: ' + left + 'px;' + 'top: ' + top + 'px;' + 'font-size: ' + size + 'px;';
-                    style += '-moz-transform:rotate(' + transform + 'deg);-webkit-transform:rotate(' + transform + 'deg);-o-transform:rotate(' + transform + 'deg);-ms-transform:rotate(' + transform + 'deg);transform:rotate(' + transform + 'deg);';
-                    html += '<span style="' + style + '">' + key + '</span>'; 
+                //var transform = Math.floor(Math.random()*90);
+                if(item>=30 && size>=1){
+                    var style = 'position: absolute;font-weight: bold;color: ' + color + ';font-size: ' + size + 'px;';
+                    //style += '-moz-transform:rotate(' + transform + 'deg);-webkit-transform:rotate(' + transform + 'deg);-o-transform:rotate(' + transform + 'deg);-ms-transform:rotate(' + transform + 'deg);transform:rotate(' + transform + 'deg);';
+                    var DIV = document.createElement("DIV");
+                    DIV.innerHTML = '<span style="' + style + '">' + key + '</span>';
+                    var html = DIV.childNodes[0];
+                    obj.appendChild(html);
+                    var last_W = obj.childNodes[obj.childNodes.length-1].offsetWidth;
+                    var last_H = obj.childNodes[obj.childNodes.length-1].offsetHeight;
+                    var left = Math.floor(Math.random()*(obj_W-last_W));
+                    var top = Math.floor(Math.random()*(obj_H-last_H));
+                    obj.childNodes[obj.childNodes.length-1].style.marginLeft = left + 'px';
+                    obj.childNodes[obj.childNodes.length-1].style.marginTop = top + 'px';
                 }
             }
-            obj.innerHTML = html;
+        }
+    }
+    
+    
+    
+    function CreateUser(){
+        if(!Data[user]){
+            Data[user] = {
+                'dayList' : {},'note' : [],'url' : [],'text' : [],'phone' : [],
+                'delgallery' : [],'delphoto' : [],'changegallery' : [],
+                'poll' : [],'pollend' : [],
+                '文字' : 0, '貼圖' : 0, '照片' : 0, '連結' : 0,
+                '記事本' : 0, '相簿' : 0, '電話' : 0, '刪除相簿照片' : 0,
+                '更改相簿名稱' : 0, '刪除相簿' : 0, '收回訊息' : 0,
+                '影片' : 0, '語音訊息' : 0, '未接來電' : 0, '加入群組' : 0,
+                '退出群組' : 0, '開始群組通話' : 0, '發起投票' : 0, '投票截止' : 0,
+                '傳送聯絡資訊' : 0,  '邀請加入' : 0, 
+            };
+        }
+    }
+    
+    function UndoMsg(addMsg){
+        var OldMsg = '';
+        var NewMsg = '';
+        switch(NowType){
+            case '發起投票':
+                OldMsg = Data[NowUser]['poll'][NowUserPollCtn];
+                NewMsg = OldMsg + '\n' + addMsg;
+                Data[NowUser]['poll'].splice(NowUserPollCtn, 1, NewMsg);
+                break;
+            case '投票截止':
+                OldMsg = Data[NowUser]['pollend'][NowUserPollendCtn];
+                NewMsg = OldMsg + '\n' + addMsg;
+                Data[NowUser]['pollend'].splice(NowUserPollendCtn, 1, NewMsg);
+                break;
+            case '記事本':
+                OldMsg = Data[NowUser]['note'][NowUserNoteCtn];
+                NewMsg = OldMsg + '\n' + addMsg;
+                Data[NowUser]['note'].splice(NowUserNoteCtn, 1, NewMsg);
+                break;
+            case '文字':
+                OldMsg = Data[NowUser]['text'][NowUserTextCtn];
+                NewMsg = OldMsg + '\n' + addMsg;
+                Data[NowUser]['text'].splice(NowUserTextCtn, 1, NewMsg);
+                Data[NowUser]['text'][NewMsg] = Data[NowUser]['text'][OldMsg];
+                delete Data[NowUser]['text'][OldMsg];
+                break;
         }
     }
 }
@@ -1036,11 +1116,11 @@ function findword() {
     var wordInADay = [];
     var wordNum;
     var splitedMessage = [];
-    var searchbox = (window.innerWidth > 768) ? document.querySelector(".searchbox") : document.getElementById("searchbox-mobile");
+    var searchbox = (window.screen.width > 768) ? document.querySelector(".searchbox") : document.getElementById("searchbox-mobile");
     var wordtofind = searchbox.value;
     searchbox.value = "";
-    var fontsize = (window.innerWidth > 768) ? 18 : 12;
-    var margin = (window.innerWidth > 768) ? 50 : 45;
+    var fontsize = (window.screen.width > 768) ? 18 : 12;
+    var margin = (window.screen.width > 768) ? 50 : 45;
     var TmpEachword = [];
     for(var key in dayList['eachword'][wordtofind]){
         TmpEachword[TmpEachword.length] = dayList['eachword'][wordtofind][key];

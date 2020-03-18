@@ -66,6 +66,7 @@ html.is-leaving .transition-fade {
     flex-direction: row;
     justify-content: space-between;
     margin-top: 2vw;
+    overflow: auto;
 }
 
 .donutchart {
@@ -260,7 +261,7 @@ html.is-leaving .transition-fade {
 }
 
 .memberchart {
-    display: flex;
+    /*display: flex;*/
     flex-direction: row;
 }
 
@@ -285,6 +286,7 @@ html.is-leaving .transition-fade {
     border: 5px solid #7c7877;
     margin: 3vw 5vw 0 0;
     padding-right: 2vw;
+    width: 30%;
 }
 
 .memberdonut {
@@ -399,8 +401,7 @@ html.is-leaving .transition-fade {
     height: 14.3vw;
 }
 
-#memberCanvas1,
-#memberCanvas2 {
+.memberdonut canvas {
     width: 11.8vw;
     height: 11.8vw;
 }
@@ -590,8 +591,7 @@ img {
         height: 26vw;
     }
 
-    #memberCanvas1,
-    #memberCanvas2 {
+    .memberdonut canvas {
         width: 24vw;
         height: 24vw;
     }
@@ -655,6 +655,7 @@ img {
         border: 2px solid #7c7877;
         padding: 0;
         margin: 0;
+        width: 45%;
     }
 
     .stat-item {

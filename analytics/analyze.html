@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Righteous&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?version=10">
     <script defer src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
         integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">
     </script>
@@ -28,7 +28,8 @@
     <script defer src="src/lib/wordfreq.worker.js"></script>
     <script defer src="src/lib/wordfreq.js"></script>
     <script defer src="src/lib/rpie.js"></script>
-    <script defer src="src/analyze.js?version=7"></script>
+    <script defer src="src/analyze.js?version=11"></script>
+    <script type="text/javascript" src="./src/lib/jquery-1.9.1.min.js"></script>
     <title>Line Message Analyzer</title>
 </head>
 
@@ -75,15 +76,8 @@
                                 <div class="lg-container">
                                     <div class="icon white"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-name>User1</div>
-                                        <div class="legendtext" member1-message>xxxx 則</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon black"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-name>User2</div>
-                                        <div class="legendtext" member2-message>xxxx 則</div>
+                                        <div class="legendtext">User1</div>
+                                        <div class="legendtext">xxxx 則</div>
                                     </div>
                                 </div>
                             </div>
@@ -173,7 +167,7 @@
                 </div>
                 <div class="secondrow">
                     <div class="member">
-                        <div class="member-name" member1-chart>User1</div>
+                        <div class="member-name" data-type="chart">User1</div>
                         <div class="underline whiteline"></div>
                         <div class="memberchart">
                             <div class="memberdonut">
@@ -183,186 +177,133 @@
                                 <div class="lg-container">
                                     <div class="icon red membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-texts>xxxxx 文字</div>
+                                        <div class="legendtext" data-type="texts">xxxxx 文字</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon white membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-stickers>xxxx 貼圖</div>
+                                        <div class="legendtext" data-type="stickers">xxxx 貼圖</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon black membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-photos>xx 照片</div>
+                                        <div class="legendtext" data-type="photos">xx 照片</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon red membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-urls>xx 連結</div>
+                                        <div class="legendtext" data-type="urls">xx 連結</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon white membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-notes>xx 記事本</div>
+                                        <div class="legendtext" data-type="notes">xx 記事本</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon black membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-gallerys>xx 相簿</div>
+                                        <div class="legendtext" data-type="gallerys">xx 相簿</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon red membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-phones>xx 電話</div>
+                                        <div class="legendtext" data-type="phones">xx 電話</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon white membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-delphotos>xx 刪除相簿照片</div>
+                                        <div class="legendtext" data-type="delphotos">xx 刪除相簿照片</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon black membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-changegallerys>xx 更改相簿名稱</div>
+                                        <div class="legendtext" data-type="changegallerys">xx 更改相簿名稱</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon red membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-delgallerys>xx 刪除相簿</div>
+                                        <div class="legendtext" data-type="delgallerys">xx 刪除相簿</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon white membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-revokemsgs>xx 收回訊息</div>
+                                        <div class="legendtext" data-type="revokemsgs">xx 收回訊息</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon black membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-missedcalls>xx 未接來電</div>
+                                        <div class="legendtext" data-type="missedcalls">xx 未接來電</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon red membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-videos>xx 影片</div>
+                                        <div class="legendtext" data-type="videos">xx 影片</div>
                                     </div>
                                 </div>
                                 <div class="lg-container">
                                     <div class="icon white membericon"></div>
                                     <div class="text-container">
-                                        <div class="legendtext" member1-audios>xx 語音訊息</div>
+                                        <div class="legendtext" data-type="audios">xx 語音訊息</div>
+                                    </div>
+                                </div>
+                                <div class="lg-container">
+                                    <div class="icon white membericon"></div>
+                                    <div class="text-container">
+                                        <div class="legendtext" data-type="joingroups">xx 加入群組</div>
+                                    </div>
+                                </div>
+                                <div class="lg-container">
+                                    <div class="icon white membericon"></div>
+                                    <div class="text-container">
+                                        <div class="legendtext" data-type="leavegroups">xx 退出群組</div>
+                                    </div>
+                                </div>
+                                <div class="lg-container">
+                                    <div class="icon white membericon"></div>
+                                    <div class="text-container">
+                                        <div class="legendtext" data-type="startgroupcalls">xx 開始群組通話</div>
+                                    </div>
+                                </div>
+                                <div class="lg-container">
+                                    <div class="icon white membericon"></div>
+                                    <div class="text-container">
+                                        <div class="legendtext" data-type="polls">xx 發起投票</div>
+                                    </div>
+                                </div>
+                                <div class="lg-container">
+                                    <div class="icon white membericon"></div>
+                                    <div class="text-container">
+                                        <div class="legendtext" data-type="pollends">xx 投票截止</div>
+                                    </div>
+                                </div>
+                                <div class="lg-container">
+                                    <div class="icon white membericon"></div>
+                                    <div class="text-container">
+                                        <div class="legendtext" data-type="sendcontactinfos">xx 傳送聯絡資訊</div>
+                                    </div>
+                                </div>
+                                <div class="lg-container">
+                                    <div class="icon white membericon"></div>
+                                    <div class="text-container">
+                                        <div class="legendtext" data-type="invites">xx 邀請加入</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="member">
-                        <div class="member-name" member2-chart>User2</div>
-                        <div class="underline whiteline"></div>
-                        <div class="memberchart">
-                            <div class="memberdonut">
-                                <canvas id="memberCanvas2" width="225" height="225"></canvas>
-                            </div>
-                            <div class="legend">
-                                <div class="lg-container">
-                                    <div class="icon red membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-texts>xxxxx 文字</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon white membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-stickers>xxxx 貼圖</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon black membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-photos>xxx 照片</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon red membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-urls>xx 連結</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon white membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-notes>xx 記事本</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon black membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-gallerys>xx 相簿</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon red membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-phones>xx 電話</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon white membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-delphotos>xx 刪除相簿照片</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon black membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-changegallerys>xx 更改相簿名稱</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon red membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-delgallerys>xx 刪除相簿</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon white membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-revokemsgs>xx 收回訊息</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon black membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-missedcalls>xx 未接來電</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon red membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-videos>xx 影片</div>
-                                    </div>
-                                </div>
-                                <div class="lg-container">
-                                    <div class="icon white membericon"></div>
-                                    <div class="text-container">
-                                        <div class="legendtext" member2-audios>xx 語音訊息</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
                     <div class="freqandsearch mobile-hidden">
                         <div class="freqimg">
                             <div class="cloud-container">
@@ -372,7 +313,7 @@
                         <div class="search">
                             <div class="info">輸入欲尋找的字眼:</div>
                             <div class="underline searchline"></div>
-                            <div class="searchbar">
+                            <div class="searchbar" style="z-index: 9999;">
                                 <input type="text" class="searchbox" placeholder="輸入字眼...">
                                 <div class="submitbutton" onclick="findword()">尋找</div>
                             </div>
@@ -435,7 +376,7 @@
                         <div class="search">
                             <div class="info">輸入欲尋找的字眼:</div>
                             <div class="underline searchline"></div>
-                            <div class="searchbar">
+                            <div class="searchbar" style="z-index: 9999;">
                                 <input type="text" class="searchbox" id="searchbox-mobile" placeholder="輸入字眼...">
                                 <div class="submitbutton" onclick="findword()">尋找</div>
                             </div>
