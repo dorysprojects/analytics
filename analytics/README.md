@@ -13,7 +13,7 @@
 
 > 📈 Analyzing your LINE message with plots and numbers!
 
-Try it out! https://dorysprojects.github.io/analytics/
+Try it out! https://dorysprojects.github.io/analytics/analytics/
 
 ## Responsive Design
 
